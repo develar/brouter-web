@@ -10,6 +10,7 @@
     "normalize-css": "*",
     "leaflet-gpx": "mpetazzoni/leaflet-gpx",
     "leaflet-search": "*",
+    "leaflet.draw": "*",
     "leaflet-plugins": "*",
     "leaflet-routing": "Turistforeningen/leaflet-routing#gh-pages",
     "Leaflet.Elevation": "MrMufflon/Leaflet.Elevation#master"
