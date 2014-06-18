@@ -1,0 +1,19 @@
+{
+  "name": "routePlanner",
+  "version": "0.0.1",
+  "devDependencies": {
+    "gulp": "^3.8.1",
+    "gulp-bower": "0.0.6",
+    "gulp-filter": "^0.4.1",
+    "gulp-newer": "^0.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/develar/brouter-web.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/develar/brouter-web/issues"
+  },
+  "homepage": "https://github.com/develar/brouter-web"
+}
