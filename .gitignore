@@ -1,14 +1,5 @@
-bower_components/leaflet-routing/libs/
-bower_components/leaflet-routing/examples/
-bower_components/Leaflet.Elevation/*
-!bower_components/Leaflet.Elevation/dist/
-!bower_components/Leaflet.Elevation/src/
-
-bower_components/leaflet.draw/*
-!bower_components/leaflet.draw/dist/
-bower_components/leaflet.draw/dist/leaflet.draw-src.js
-
-bower_components/leaflet-search/images/leaflet-search.jpg
+bower_components/
+node_modules/
 
 nbproject/
 .idea/
