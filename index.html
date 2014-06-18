@@ -1,105 +1,107 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>BRouter web client</title>
+  <meta charset="utf-8">
+  <title>Route Planner</title>
 
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
-    <link rel="stylesheet" href="bower_components/leaflet.draw/dist/leaflet.draw.css" />
-    <link rel="stylesheet" href="bower_components/Leaflet.Elevation/dist/Leaflet.Elevation-0.0.2.css" />
-    <link rel="stylesheet" href="bower_components/leaflet-search/dist/leaflet-search.min.css" />
-    <link rel="stylesheet" href="css/leaflet-routing.css" />
-    <link rel="stylesheet" href="bower_components/normalize-css/normalize.css" />
-    <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="lib/leaflet-1806/leaflet.css"/>
+  <link rel="stylesheet" href="lib/leaflet.draw/dist/leaflet.draw.css"/>
+  <link rel="stylesheet" href="lib/Leaflet.Elevation/dist/Leaflet.Elevation-0.0.2.css"/>
+  <link rel="stylesheet" href="lib/leaflet-search/dist/leaflet-search.min.css"/>
+  <link rel="stylesheet" href="css/leaflet-routing.css"/>
+  <link rel="stylesheet" href="lib/normalize-css/normalize.css"/>
+  <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
-    <div id="map"></div>
+<div id="map"></div>
 
-    <div id="message" class="info hidden">
+<div id="message" class="info hidden">
+</div>
+<div id="header" class="hidden">
+  <div class="title"><span class="title-name">BRouter web</span>&nbsp;&nbsp;<sup class="version">alpha2</sup></div>
+  <div class="header-text">
+    'q' to cancel drawing, 'd' to enable drawing<br>
+    Web client for <a href="http://brouter.de/brouter" target="_blank">BRouter</a> &middot;
+    <a href="https://github.com/nrenner/brouter-web#readme" target="_blank">about</a> &middot;
+    <a href="https://github.com/nrenner/brouter-web" target="_blank">GitHub</a> &middot;
+    <a href="http://groups.google.com/group/osm-android-bikerouting" target="_blank">contact</a><br>
+  </div>
+</div>
+<div id="route_options" class="hidden">
+  <table>
+    <tr>
+      <td><label for="profile">Profile:</label></td>
+      <td><select id="profile">
+        <option value="" disabled>&lt;custom&gt;</option>
+        <!-- profile option list built dynamically from config -->
+      </select></td>
+    </tr>
+    <tr>
+      <td><label for="alternative">Alternative:</label></td>
+      <td><select id="alternative">
+        <option value="0">original</option>
+        <option value="1">first alternative</option>
+        <option value="2">second alternative</option>
+        <option value="3">third alternative</option>
+      </select>
+      </td>
+    </tr>
+  </table>
+</div>
+<div id="profile_div" class="hidden">
+  <form id="profile_upload" name="profile_upload">
+    <button id="clear">Clear</button>
+    &nbsp;
+    <a href="http://brouter.de/brouter/costfunctions.html" target="_blank">Help</a>
+    <input type="submit" value="Upload"/>
+
+    <div id="textarea_container">
+      <textarea name="profile" spellcheck="false" wrap="soft" maxlength="100000"
+                placeholder="... paste your custom routing profile here ..."></textarea>
     </div>
-    <div id="header" class="hidden">
-        <div class="title"><span class="title-name">BRouter web</span>&nbsp;&nbsp;<sup class="version">alpha2</sup></div>
-        <div class="header-text">
-            'q' to cancel drawing, 'd' to enable drawing<br>
-            Web client for <a href="http://brouter.de/brouter" target="_blank">BRouter</a> &middot;
-            <a href="https://github.com/nrenner/brouter-web#readme" target="_blank">about</a> &middot;
-            <a href="https://github.com/nrenner/brouter-web" target="_blank">GitHub</a> &middot;
-            <a href="http://groups.google.com/group/osm-android-bikerouting" target="_blank">contact</a><br>
-        </div>
-    </div>
-    <div id="route_options" class="hidden">
-        <table>
-            <tr><td>Profile:</td>
-                <td><select id="profile">
-                        <option value="" disabled>&lt;custom&gt;</option>
-                        <!-- profile option list built dynamically from config -->
-                    </select></td></tr>
-            <tr><td>Alternative:</td>
-                <td><select id="alternative">
-                        <option value="0">original</option>
-                        <option value="1">first alternative</option>
-                        <option value="2">second alternative</option>
-                        <option value="3">third alternative</option>
-                    </select>
-                </td></tr>
-        </table>
-    </div>
-    <div id="profile_div" class="hidden">
-        <form id="profile_upload" name="profile_upload">
-            <button id="clear">Clear</button>&nbsp;
-            <a href="http://brouter.de/brouter/costfunctions.html" target="_blank">Help</a>
-            <input type="submit" value="Upload" />
-            <div id="textarea_container">
-                <textarea type="text" name="profile" spellcheck="false" wrap="off" maxlength="100000" placeholder="... paste your custom routing profile here ..."></textarea>
-            </div>
-        </form>
-    </div>
+  </form>
+</div>
 
-    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+<script src="lib/leaflet-1806/leaflet-src.js"></script>
 
-    <script src="bower_components/leaflet.draw/dist/leaflet.draw.js"></script>
-    <script src="bower_components/leaflet-gpx/gpx.js"></script>
+<script src="lib/leaflet.draw/dist/leaflet.draw.js"></script>
+<script src="lib/leaflet-gpx/gpx.js"></script>
 
-    <script src="https://maps.googleapis.com/maps/api/js?v=3&sensor=false"></script>
+<script src="https://maps.googleapis.com/maps/api/js?v=3&sensor=false"></script>
 
-    <!--
-    <script src="lib/spin.min.js"></script>
-    <script src="lib/leaflet.spin.js"></script>
-    -->
-    <script src="bower_components/leaflet-search/dist/leaflet-search.min.js"></script>
-    <script src="bower_components/leaflet-plugins/control/Permalink.js"></script>
-    <script src="bower_components/leaflet-plugins/control/Permalink.Layer.js"></script>
+<script src="lib/leaflet-search/dist/leaflet-search.min.js"></script>
+<script src="lib/leaflet-plugins/control/Permalink.js"></script>
+<script src="lib/leaflet-plugins/control/Permalink.Layer.js"></script>
 
-    <script src="bower_components/leaflet-routing/src/utils/LineUtil.Snapping.js"></script>
-    <script src="bower_components/leaflet-routing/src/utils/Marker.Snapping.js"></script>
-    <script src="bower_components/leaflet-routing/src/L.Routing.js"></script>
-    <script src="bower_components/leaflet-routing/src/L.Routing.Storage.js"></script>
-    <script src="bower_components/leaflet-routing/src/L.Routing.Draw.js"></script>
-    <script src="bower_components/leaflet-routing/src/L.Routing.Edit.js"></script>
+<script src="lib/leaflet-routing/src/utils/LineUtil.Snapping.js"></script>
+<script src="lib/leaflet-routing/src/utils/Marker.Snapping.js"></script>
+<script src="lib/leaflet-routing/src/L.Routing.js"></script>
+<script src="lib/leaflet-routing/src/L.Routing.Storage.js"></script>
+<script src="lib/leaflet-routing/src/L.Routing.Draw.js"></script>
+<script src="lib/leaflet-routing/src/L.Routing.Edit.js"></script>
 
-    <!--<script src="http://d3js.org/d3.v3.min.js"></script>-->
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.4.8/d3.min.js"></script>
-    <script src="bower_components/Leaflet.Elevation/src/L.Control.Elevation.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.8/d3.min.js"></script>
+<script src="lib/Leaflet.Elevation/dist/Leaflet.Elevation-0.0.2.min.js"></script>
 
-    <script>
-        // global package prefix for BRouter web application
-        BR = {};
-    </script>
-    <script src="config.js"></script>
-    <script src="js/router/BRouter.js"></script>
-    <!-- <script src="js/router/brouterCgi.js"></script> -->
-    <script src="js/control/Control.js"></script>
-    <script src="js/plugin/Routing.js"></script>
-    <script src="js/plugin/NogoAreas.js"></script>
-    <script src="js/plugin/Elevation.js"></script>
-    <script src="js/plugin/Search.js"></script>
-    <script src="js/plugin/Permalink.Routing.js"></script>
-    <script src="js/control/TrackStats.js"></script>
-    <script src="js/control/Download.js"></script>
-    <script src="js/control/Profile.js"></script>
-    <script src="js/control/RoutingOptions.js"></script>
-    <script src="js/control/Message.js"></script>
+<script>
+  // global package prefix for BRouter web application
+  BR = {};
+</script>
+<script src="config.js"></script>
+<script src="js/router/BRouter.js"></script>
+<!-- <script src="js/router/brouterCgi.js"></script> -->
+<script src="js/control/Control.js"></script>
+<script src="js/plugin/Routing.js"></script>
+<script src="js/plugin/NogoAreas.js"></script>
+<script src="js/plugin/Elevation.js"></script>
+<script src="js/plugin/Search.js"></script>
+<script src="js/plugin/Permalink.Routing.js"></script>
+<script src="js/control/TrackStats.js"></script>
+<script src="js/control/Download.js"></script>
+<script src="js/control/Profile.js"></script>
+<script src="js/control/RoutingOptions.js"></script>
+<script src="js/control/Message.js"></script>
 
-    <script src="js/index.js"></script>
+<script src="js/index.js"></script>
 </body>
 </html>
