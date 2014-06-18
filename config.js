@@ -2,7 +2,7 @@
   var hostname = window.location.hostname;
   BR.conf = {};
 
-  if (hostname === 'routeplanner.develar.org' || hostname === 'brouter.de' || hostname === 'h2096617.stratoserver.net') {
+  if (true || hostname === 'routeplanner.develar.org' || hostname === 'brouter.de' || hostname === 'h2096617.stratoserver.net') {
     // online service (brouter.de) configuration
     BR.conf.profiles = [
       'trekking',
