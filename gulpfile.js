@@ -3,6 +3,23 @@ var bower = require('gulp-bower');
 var newer = require('gulp-newer');
 var gulpFilter = require('gulp-filter');
 
+var ts = require('gulp-type');
+
+var tsProject = ts.createProject({removeComments: true});
+
+gulp.task('compile', function () {
+  var tsResult = gulp.src('src/*.ts')
+    .pipe(ts(tsProject));
+
+  return tsResult.js.pipe(gulp.dest('out'));
+});
+
+gulp.task('default', ['compile']);
+
+gulp.task('watch', ['compile'], function() {
+    gulp.watch('src/*.ts', ['compile']);
+});
+
 gulp.task('bower', function () {
   var libDestination = 'lib/';
   var filter = gulpFilter(function (file) {

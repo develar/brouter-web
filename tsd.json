@@ -1,0 +1,18 @@
+{
+  "version": "v4",
+  "repo": "borisyankov/DefinitelyTyped",
+  "ref": "master",
+  "path": "typings",
+  "bundle": "typings/tsd.d.ts",
+  "installed": {
+    "pixi/webgl.d.ts": {
+      "commit": "a8c25e3a7253541e8dac26ea526ca6deb0e70e86"
+    },
+    "pixi/pixi.d.ts": {
+      "commit": "a8c25e3a7253541e8dac26ea526ca6deb0e70e86"
+    },
+    "leaflet/leaflet.d.ts": {
+      "commit": "a8c25e3a7253541e8dac26ea526ca6deb0e70e86"
+    }
+  }
+}

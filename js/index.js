@@ -22,6 +22,10 @@
       attribution: 'tiles ' + '&copy; <a target="_blank" href="http://www.openandromaps.org/en/disclaimer">OpenAndroMaps</a>'
     });
 
+    var mapsforgeWebgl = L.vectorTileLayer(window.location.hostname == 'localhost' ? 'http://localhost:6090/{z}/{x}/{y}' : 'http://{s}.tile.develar.org/{z}/{x}/{y}', {
+      maxZoom: 21
+    });
+
     var osmde = L.tileLayer('http://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: 'tiles by <a target="_blank" href="http://openstreetmap.de/karte.html">openstreetmap.de</a> ' + osmAttribution
@@ -70,6 +74,7 @@
 
     layersControl = L.control.layers({
                                        'OpenAndroMaps': mapsforge,
+                                       'OpenAndroMaps vector': mapsforgeWebgl,
                                        'OpenStreetMap': osm,
                                        'OpenStreetMap.de': osmde,
                                        'OpenTopoMap': topo,
