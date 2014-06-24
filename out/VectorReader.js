@@ -37,11 +37,11 @@ var VectorReader;
         };
 
         MyDataView.prototype.readSignedVarInt = function () {
-            var v = this.readUnsighedInt29();
+            var v = this.readUnsighedVarInt();
             return ((v >>> 1) ^ -(v & 1)) | 0;
         };
 
-        MyDataView.prototype.readUnsighedInt29 = function () {
+        MyDataView.prototype.readUnsighedVarInt = function () {
             var b = this.readUnsignedByte();
             if (b < 128) {
                 return b;
@@ -103,8 +103,14 @@ var VectorReader;
                         throw new Error("polyline segement count must be greater than 0");
                     }
 
+                    var prevX = 0;
+                    var prevY = 0;
                     do {
-                        g.lineTo(dataView.readTwipsAndConvert(), dataView.readTwipsAndConvert());
+                        var x = dataView.readTwipsAndConvert() + prevX;
+                        var y = dataView.readTwipsAndConvert() + prevY;
+                        g.lineTo(x, y);
+                        prevX = x;
+                        prevY = y;
                     } while(--n > 0);
                     break;
 
@@ -117,7 +123,7 @@ var VectorReader;
                     break;
 
                 case 8 /* DRAW_CIRCLE */:
-                    g.drawCircle(dataView.readUnsighedInt29(), dataView.readUnsighedInt29(), dataView.readUnsighedInt29());
+                    g.drawCircle(dataView.readSignedVarInt(), dataView.readSignedVarInt(), dataView.readSignedVarInt());
                     break;
 
                 case 5 /* BEGIN_FILL_RGB */:

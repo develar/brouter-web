@@ -38,11 +38,11 @@ module VectorReader {
     }
 
     readSignedVarInt():number {
-      var v = this.readUnsighedInt29();
+      var v = this.readUnsighedVarInt();
       return ((v >>> 1) ^ -(v & 1)) | 0;
     }
 
-    readUnsighedInt29():number {
+    readUnsighedVarInt():number {
       var b = this.readUnsignedByte();
       if (b < 128) {
         return b;
@@ -103,8 +103,14 @@ module VectorReader {
             throw new Error("polyline segement count must be greater than 0");
           }
 
+          var prevX = 0;
+          var prevY = 0;
           do {
-            g.lineTo(dataView.readTwipsAndConvert(), dataView.readTwipsAndConvert());
+            var x = dataView.readTwipsAndConvert() + prevX;
+            var y = dataView.readTwipsAndConvert() + prevY;
+            g.lineTo(x, y);
+            prevX = x;
+            prevY = y;
           }
           while (--n > 0);
           break;
@@ -118,7 +124,7 @@ module VectorReader {
           break;
 
         case PixiCommand.DRAW_CIRCLE:
-          g.drawCircle(dataView.readUnsighedInt29(), dataView.readUnsighedInt29(), dataView.readUnsighedInt29());
+          g.drawCircle(dataView.readSignedVarInt(), dataView.readSignedVarInt(), dataView.readSignedVarInt());
           break;
 
         case PixiCommand.BEGIN_FILL_RGB:
