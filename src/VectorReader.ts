@@ -3,6 +3,9 @@
 
 "use strict";
 
+import DiplayObjectContainer = PIXI.DisplayObjectContainer;
+import Sprite = PIXI.Sprite;
+
 module VectorReader {
   enum PixiCommand {
     MOVE_TO, LINE_TO, POLYLINE,
@@ -12,7 +15,12 @@ module VectorReader {
     END_FILL,
 
     DRAW_CIRCLE,
+    ROTATED_TEXT,
+    TEXT,
   }
+
+  var STROKE_MIN_ZOOM_LEVEL = 12;
+  var STROKE_INCREASE = 1.5;
 
   class MyDataView {
     public cursor = 0;
@@ -24,6 +32,10 @@ module VectorReader {
 
     readUnsignedByte():number {
       return this.dataView.getUint8(this.cursor++);
+    }
+
+    getUnsignedByte(offset:number):number {
+      return this.dataView.getUint8(offset);
     }
 
     readShort():number {
@@ -84,8 +96,95 @@ module VectorReader {
     }
   }
 
-  export function draw(tileData:ArrayBuffer, g:PIXI.Graphics) {
+  function drawText(dataView, rotated:boolean, charsInfo:Array<PIXI.CharInfo>, textContainer:DiplayObjectContainer):void {
+    var x = dataView.readTwipsAndConvert();
+    var y = dataView.readTwipsAndConvert();
+    if (rotated) {
+      dataView.readTwipsAndConvert();
+      dataView.readTwipsAndConvert();
+    }
+
+    var n = dataView.readUnsighedVarInt();
+    var prevCharCode = -1;
+    var count = 0;
+    while (count < n) {
+      var charCode = dataView.readUnsignedByte();
+      if (charCode <= 127) {
+        count++;
+      }
+      else {
+        switch (charCode >> 4) {
+          case 0:
+          case 1:
+          case 2:
+          case 3:
+          case 4:
+          case 5:
+          case 6:
+          case 7:
+            count++;
+            break;
+
+          case 12:
+          case 13:
+            count += 2;
+            if (count > n) {
+              throw new Error("malformed input: partial character at end");
+            }
+
+            var char2 = dataView.readUnsignedByte();
+            if ((char2 & 0xC0) != 0x80) {
+                throw new Error("malformed input around byte " + count);
+            }
+            charCode = ((charCode & 0x1F) << 6) | (char2 & 0x3F);
+            break;
+
+          case 14:
+            count += 3;
+            if (count > n) {
+              throw new Error("malformed input: partial character at end");
+            }
+
+            var char2 = dataView.readUnsignedByte();
+            var char3 = dataView.readUnsignedByte();
+            if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
+              throw new Error("malformed input around byte " + (count - 1));
+            }
+            charCode = ((charCode & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0);
+            break;
+
+          default:
+            throw new Error("malformed input around byte " + count);
+        }
+      }
+
+      var charData = charsInfo[charCode];
+      if (charData == null) {
+        console.warn("missed char: " + charCode);
+        continue;
+      }
+
+      if (prevCharCode !== -1 && charData[prevCharCode] != null) {
+        x += charData.kerning[prevCharCode];
+      }
+
+      var charSprite = new Sprite(charData.texture);
+      charSprite.position.x = x + charData.xOffset;
+      charSprite.position.y = y + charData.yOffset;
+      textContainer.addChild(charSprite);
+
+      x += charData.xAdvance;
+      prevCharCode = charCode;
+    }
+  }
+
+  export function draw(tileData:ArrayBuffer, g:PIXI.Graphics, textContainer:DiplayObjectContainer, zoomLevel:number) {
     var dataView = new MyDataView(new DataView(tileData));
+    var data = PIXI.BitmapText.fonts["Avenir Next"];
+    var charsInfo = data.chars;
+
+    var zoomLevelDiff = Math.max(zoomLevel - STROKE_MIN_ZOOM_LEVEL, 0);
+    var strokeScaleFactor = Math.pow(STROKE_INCREASE, zoomLevelDiff);
     do {
       var command = dataView.readUnsignedByte();
       switch (command) {
@@ -116,14 +215,15 @@ module VectorReader {
           break;
 
         case PixiCommand.LINE_STYLE_RGB:
-          g.lineStyle(dataView.readTwipsAndConvert(), dataView.readRgb(), 1);
+          g.lineStyle(dataView.readTwipsAndConvert() * strokeScaleFactor, dataView.readRgb(), 1);
           break;
 
         case PixiCommand.LINE_STYLE_RGBA:
-          g.lineStyle(dataView.readTwipsAndConvert(), dataView.readRgb(), dataView.readUnsignedByte() / 255);
+          g.lineStyle(dataView.readTwipsAndConvert() * strokeScaleFactor, dataView.readRgb(), dataView.readUnsignedByte() / 255);
           break;
 
         case PixiCommand.DRAW_CIRCLE:
+          // todo scale radius
           g.drawCircle(dataView.readSignedVarInt(), dataView.readSignedVarInt(), dataView.readSignedVarInt());
           break;
 
@@ -137,6 +237,14 @@ module VectorReader {
 
         case PixiCommand.END_FILL:
           g.endFill();
+          break;
+
+        case PixiCommand.ROTATED_TEXT:
+          drawText(dataView, true, charsInfo, textContainer);
+          break;
+
+        case PixiCommand.TEXT:
+          drawText(dataView, false, charsInfo, textContainer);
           break;
 
         default:

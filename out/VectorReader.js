@@ -1,4 +1,7 @@
 "use strict";
+var DiplayObjectContainer = PIXI.DisplayObjectContainer;
+var Sprite = PIXI.Sprite;
+
 var VectorReader;
 (function (VectorReader) {
     var PixiCommand;
@@ -14,7 +17,12 @@ var VectorReader;
         PixiCommand[PixiCommand["END_FILL"] = 7] = "END_FILL";
 
         PixiCommand[PixiCommand["DRAW_CIRCLE"] = 8] = "DRAW_CIRCLE";
+        PixiCommand[PixiCommand["ROTATED_TEXT"] = 9] = "ROTATED_TEXT";
+        PixiCommand[PixiCommand["TEXT"] = 10] = "TEXT";
     })(PixiCommand || (PixiCommand = {}));
+
+    var STROKE_MIN_ZOOM_LEVEL = 12;
+    var STROKE_INCREASE = 1.5;
 
     var MyDataView = (function () {
         function MyDataView(dataView) {
@@ -24,6 +32,10 @@ var VectorReader;
         }
         MyDataView.prototype.readUnsignedByte = function () {
             return this.dataView.getUint8(this.cursor++);
+        };
+
+        MyDataView.prototype.getUnsignedByte = function (offset) {
+            return this.dataView.getUint8(offset);
         };
 
         MyDataView.prototype.readShort = function () {
@@ -84,8 +96,94 @@ var VectorReader;
         return MyDataView;
     })();
 
-    function draw(tileData, g) {
+    function drawText(dataView, rotated, charsInfo, textContainer) {
+        var x = dataView.readTwipsAndConvert();
+        var y = dataView.readTwipsAndConvert();
+        if (rotated) {
+            dataView.readTwipsAndConvert();
+            dataView.readTwipsAndConvert();
+        }
+
+        var n = dataView.readUnsighedVarInt();
+        var prevCharCode = -1;
+        var count = 0;
+        while (count < n) {
+            var charCode = dataView.readUnsignedByte();
+            if (charCode <= 127) {
+                count++;
+            } else {
+                switch (charCode >> 4) {
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                        count++;
+                        break;
+
+                    case 12:
+                    case 13:
+                        count += 2;
+                        if (count > n) {
+                            throw new Error("malformed input: partial character at end");
+                        }
+
+                        var char2 = dataView.readUnsignedByte();
+                        if ((char2 & 0xC0) != 0x80) {
+                            throw new Error("malformed input around byte " + count);
+                        }
+                        charCode = ((charCode & 0x1F) << 6) | (char2 & 0x3F);
+                        break;
+
+                    case 14:
+                        count += 3;
+                        if (count > n) {
+                            throw new Error("malformed input: partial character at end");
+                        }
+
+                        var char2 = dataView.readUnsignedByte();
+                        var char3 = dataView.readUnsignedByte();
+                        if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
+                            throw new Error("malformed input around byte " + (count - 1));
+                        }
+                        charCode = ((charCode & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0);
+                        break;
+
+                    default:
+                        throw new Error("malformed input around byte " + count);
+                }
+            }
+
+            var charData = charsInfo[charCode];
+            if (charData == null) {
+                console.warn("missed char: " + charCode);
+                continue;
+            }
+
+            if (prevCharCode !== -1 && charData[prevCharCode] != null) {
+                x += charData.kerning[prevCharCode];
+            }
+
+            var charSprite = new Sprite(charData.texture);
+            charSprite.position.x = x + charData.xOffset;
+            charSprite.position.y = y + charData.yOffset;
+            textContainer.addChild(charSprite);
+
+            x += charData.xAdvance;
+            prevCharCode = charCode;
+        }
+    }
+
+    function draw(tileData, g, textContainer, zoomLevel) {
         var dataView = new MyDataView(new DataView(tileData));
+        var data = PIXI.BitmapText.fonts["Avenir Next"];
+        var charsInfo = data.chars;
+
+        var zoomLevelDiff = Math.max(zoomLevel - STROKE_MIN_ZOOM_LEVEL, 0);
+        var strokeScaleFactor = Math.pow(STROKE_INCREASE, zoomLevelDiff);
         do {
             var command = dataView.readUnsignedByte();
             switch (command) {
@@ -115,11 +213,11 @@ var VectorReader;
                     break;
 
                 case 3 /* LINE_STYLE_RGB */:
-                    g.lineStyle(dataView.readTwipsAndConvert(), dataView.readRgb(), 1);
+                    g.lineStyle(dataView.readTwipsAndConvert() * strokeScaleFactor, dataView.readRgb(), 1);
                     break;
 
                 case 4 /* LINE_STYLE_RGBA */:
-                    g.lineStyle(dataView.readTwipsAndConvert(), dataView.readRgb(), dataView.readUnsignedByte() / 255);
+                    g.lineStyle(dataView.readTwipsAndConvert() * strokeScaleFactor, dataView.readRgb(), dataView.readUnsignedByte() / 255);
                     break;
 
                 case 8 /* DRAW_CIRCLE */:
@@ -136,6 +234,14 @@ var VectorReader;
 
                 case 7 /* END_FILL */:
                     g.endFill();
+                    break;
+
+                case 9 /* ROTATED_TEXT */:
+                    drawText(dataView, true, charsInfo, textContainer);
+                    break;
+
+                case 10 /* TEXT */:
+                    drawText(dataView, false, charsInfo, textContainer);
                     break;
 
                 default:

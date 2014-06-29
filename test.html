@@ -14,23 +14,31 @@
 </head>
 <body>
 <script>
-  var stage = new PIXI.Stage(0xF8F8F8);
+  var bitmapFontLoader = new PIXI.BitmapFontLoader("12-bold.fnt");
+  bitmapFontLoader.addEventListener("loaded", function () {
+    drawTile();
+  });
+  bitmapFontLoader.load();
+
+  function drawTile() {
+    var stage = new PIXI.Stage(0xF8F8F8);
 //  var renderer = PIXI.autoDetectRenderer(256, 256, null, false, true);
-  var renderer = new PIXI.CanvasRenderer(256, 256);
-  document.body.appendChild(renderer.view);
-
-  var request = new XMLHttpRequest();
-  request.responseType = 'arraybuffer';
-  request.onload = function () {
-    var graphics = new PIXI.Graphics();
-    VectorReader.draw(request.response, graphics);
-    stage.addChild(graphics);
-
-    renderer.render(stage);
-  };
-  request.open("get", "http://localhost:6090/12/2185/1429.v?f=" + Math.random());
-//  request.open("get", "http://localhost:6090/18/139471/91081.v");
-  request.send();
+    var renderer = new PIXI.CanvasRenderer(256, 256);
+    document.body.appendChild(renderer.view);
+    var request = new XMLHttpRequest();
+    request.responseType = 'arraybuffer';
+    request.onload = function () {
+      var graphics = new PIXI.Graphics();
+      var textContainer = new PIXI.DisplayObjectContainer();
+      VectorReader.draw(request.response, graphics, textContainer, 18);
+      stage.addChild(graphics);
+//      stage.addChild(textContainer);
+      renderer.render(stage);
+    };
+//  request.open("get", "http://localhost:6090/12/2185/1429.v?f=" + Math.random());
+    request.open("get", "http://localhost:6090/18/139471/91081.v");
+    request.send();
+  }
 </script>
 
 </body>

@@ -111,8 +111,24 @@ declare module PIXI
 		load():void;
 	}
 
+  export interface FontInfo {
+    chars:Array<CharInfo>;
+  }
+
+  export interface CharInfo {
+    xOffset:number;
+    yOffset:number;
+
+    xAdvance:number;
+
+    kerning:Array<number>;
+    texture:Texture;
+  }
+
 	export class BitmapText extends DisplayObjectContainer
 	{
+    static fonts:{ [fontName: string]: FontInfo; };
+
 		width:number;
 		height:number;
 		constructor(text: string, style: IBitmapTextStyle);
