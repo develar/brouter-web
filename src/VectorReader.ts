@@ -14,7 +14,7 @@ module VectorReader {
     BEGIN_FILL_RGB, BEGIN_FILL_RGBA,
     END_FILL,
 
-    DRAW_CIRCLE,
+    DRAW_CIRCLE, DRAW_CIRCLE2,
     ROTATED_TEXT,
     TEXT,
   }
@@ -245,6 +245,11 @@ module VectorReader {
         case PixiCommand.DRAW_CIRCLE:
           // todo scale radius
           g.drawCircle(dataView.readSignedVarInt(), dataView.readSignedVarInt(), dataView.readSignedVarInt());
+          break;
+
+        case PixiCommand.DRAW_CIRCLE2:
+          // todo scale radius
+          g.drawCircle(dataView.readTwipsAndConvert(), dataView.readTwipsAndConvert(), dataView.readTwipsAndConvert());
           break;
 
         case PixiCommand.BEGIN_FILL_RGB:

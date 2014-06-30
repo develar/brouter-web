@@ -18,8 +18,9 @@ var VectorReader;
         PixiCommand[PixiCommand["END_FILL"] = 8] = "END_FILL";
 
         PixiCommand[PixiCommand["DRAW_CIRCLE"] = 9] = "DRAW_CIRCLE";
-        PixiCommand[PixiCommand["ROTATED_TEXT"] = 10] = "ROTATED_TEXT";
-        PixiCommand[PixiCommand["TEXT"] = 11] = "TEXT";
+        PixiCommand[PixiCommand["DRAW_CIRCLE2"] = 10] = "DRAW_CIRCLE2";
+        PixiCommand[PixiCommand["ROTATED_TEXT"] = 11] = "ROTATED_TEXT";
+        PixiCommand[PixiCommand["TEXT"] = 12] = "TEXT";
     })(PixiCommand || (PixiCommand = {}));
 
     var STROKE_MIN_ZOOM_LEVEL = 12;
@@ -244,6 +245,10 @@ var VectorReader;
                     g.drawCircle(dataView.readSignedVarInt(), dataView.readSignedVarInt(), dataView.readSignedVarInt());
                     break;
 
+                case 10 /* DRAW_CIRCLE2 */:
+                    g.drawCircle(dataView.readTwipsAndConvert(), dataView.readSignedVarInt(), dataView.readSignedVarInt());
+                    break;
+
                 case 6 /* BEGIN_FILL_RGB */:
                     g.beginFill(dataView.readRgb(), 1);
                     break;
@@ -256,11 +261,11 @@ var VectorReader;
                     g.endFill();
                     break;
 
-                case 10 /* ROTATED_TEXT */:
+                case 11 /* ROTATED_TEXT */:
                     drawText(dataView, true, charsInfo, textContainer);
                     break;
 
-                case 11 /* TEXT */:
+                case 12 /* TEXT */:
                     drawText(dataView, false, charsInfo, textContainer);
                     break;
 
