@@ -8,7 +8,7 @@ import Sprite = PIXI.Sprite;
 
 module VectorReader {
   enum PixiCommand {
-    MOVE_TO, LINE_TO, POLYLINE,
+    MOVE_TO, LINE_TO, POLYLINE, POLYLINE2,
 
     LINE_STYLE_RGB, LINE_STYLE_RGBA,
     BEGIN_FILL_RGB, BEGIN_FILL_RGBA,
@@ -204,6 +204,26 @@ module VectorReader {
 
           var prevX = 0;
           var prevY = 0;
+          do {
+            var x = dataView.readTwipsAndConvert() + prevX;
+            var y = dataView.readTwipsAndConvert() + prevY;
+            g.lineTo(x, y);
+            prevX = x;
+            prevY = y;
+          }
+          while (--n > 0);
+          break;
+
+        case PixiCommand.POLYLINE2:
+          var prevX = dataView.readTwipsAndConvert();
+          var prevY = dataView.readTwipsAndConvert();
+          g.moveTo(prevX, prevY);
+
+          var n = dataView.readUnsighedVarInt();
+          if (n <= 0) {
+            throw new Error("polyline segement count must be greater than 0");
+          }
+
           do {
             var x = dataView.readTwipsAndConvert() + prevX;
             var y = dataView.readTwipsAndConvert() + prevY;

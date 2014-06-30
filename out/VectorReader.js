@@ -9,16 +9,17 @@ var VectorReader;
         PixiCommand[PixiCommand["MOVE_TO"] = 0] = "MOVE_TO";
         PixiCommand[PixiCommand["LINE_TO"] = 1] = "LINE_TO";
         PixiCommand[PixiCommand["POLYLINE"] = 2] = "POLYLINE";
+        PixiCommand[PixiCommand["POLYLINE2"] = 3] = "POLYLINE2";
 
-        PixiCommand[PixiCommand["LINE_STYLE_RGB"] = 3] = "LINE_STYLE_RGB";
-        PixiCommand[PixiCommand["LINE_STYLE_RGBA"] = 4] = "LINE_STYLE_RGBA";
-        PixiCommand[PixiCommand["BEGIN_FILL_RGB"] = 5] = "BEGIN_FILL_RGB";
-        PixiCommand[PixiCommand["BEGIN_FILL_RGBA"] = 6] = "BEGIN_FILL_RGBA";
-        PixiCommand[PixiCommand["END_FILL"] = 7] = "END_FILL";
+        PixiCommand[PixiCommand["LINE_STYLE_RGB"] = 4] = "LINE_STYLE_RGB";
+        PixiCommand[PixiCommand["LINE_STYLE_RGBA"] = 5] = "LINE_STYLE_RGBA";
+        PixiCommand[PixiCommand["BEGIN_FILL_RGB"] = 6] = "BEGIN_FILL_RGB";
+        PixiCommand[PixiCommand["BEGIN_FILL_RGBA"] = 7] = "BEGIN_FILL_RGBA";
+        PixiCommand[PixiCommand["END_FILL"] = 8] = "END_FILL";
 
-        PixiCommand[PixiCommand["DRAW_CIRCLE"] = 8] = "DRAW_CIRCLE";
-        PixiCommand[PixiCommand["ROTATED_TEXT"] = 9] = "ROTATED_TEXT";
-        PixiCommand[PixiCommand["TEXT"] = 10] = "TEXT";
+        PixiCommand[PixiCommand["DRAW_CIRCLE"] = 9] = "DRAW_CIRCLE";
+        PixiCommand[PixiCommand["ROTATED_TEXT"] = 10] = "ROTATED_TEXT";
+        PixiCommand[PixiCommand["TEXT"] = 11] = "TEXT";
     })(PixiCommand || (PixiCommand = {}));
 
     var STROKE_MIN_ZOOM_LEVEL = 12;
@@ -212,35 +213,54 @@ var VectorReader;
                     } while(--n > 0);
                     break;
 
-                case 3 /* LINE_STYLE_RGB */:
+                case 3 /* POLYLINE2 */:
+                    var prevX = dataView.readTwipsAndConvert();
+                    var prevY = dataView.readTwipsAndConvert();
+                    g.moveTo(prevX, prevY);
+
+                    var n = dataView.readUnsighedVarInt();
+                    if (n <= 0) {
+                        throw new Error("polyline segement count must be greater than 0");
+                    }
+
+                    do {
+                        var x = dataView.readTwipsAndConvert() + prevX;
+                        var y = dataView.readTwipsAndConvert() + prevY;
+                        g.lineTo(x, y);
+                        prevX = x;
+                        prevY = y;
+                    } while(--n > 0);
+                    break;
+
+                case 4 /* LINE_STYLE_RGB */:
                     g.lineStyle(dataView.readTwipsAndConvert() * strokeScaleFactor, dataView.readRgb(), 1);
                     break;
 
-                case 4 /* LINE_STYLE_RGBA */:
+                case 5 /* LINE_STYLE_RGBA */:
                     g.lineStyle(dataView.readTwipsAndConvert() * strokeScaleFactor, dataView.readRgb(), dataView.readUnsignedByte() / 255);
                     break;
 
-                case 8 /* DRAW_CIRCLE */:
+                case 9 /* DRAW_CIRCLE */:
                     g.drawCircle(dataView.readSignedVarInt(), dataView.readSignedVarInt(), dataView.readSignedVarInt());
                     break;
 
-                case 5 /* BEGIN_FILL_RGB */:
+                case 6 /* BEGIN_FILL_RGB */:
                     g.beginFill(dataView.readRgb(), 1);
                     break;
 
-                case 6 /* BEGIN_FILL_RGBA */:
+                case 7 /* BEGIN_FILL_RGBA */:
                     g.beginFill(dataView.readRgb(), dataView.readUnsignedByte() / 255);
                     break;
 
-                case 7 /* END_FILL */:
+                case 8 /* END_FILL */:
                     g.endFill();
                     break;
 
-                case 9 /* ROTATED_TEXT */:
+                case 10 /* ROTATED_TEXT */:
                     drawText(dataView, true, charsInfo, textContainer);
                     break;
 
-                case 10 /* TEXT */:
+                case 11 /* TEXT */:
                     drawText(dataView, false, charsInfo, textContainer);
                     break;
 
