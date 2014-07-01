@@ -100,8 +100,19 @@ module VectorReader {
     var x = dataView.readTwipsAndConvert();
     var y = dataView.readTwipsAndConvert();
     if (rotated) {
-      dataView.readTwipsAndConvert();
-      dataView.readTwipsAndConvert();
+      var theta = dataView.readTwipsAndConvert();
+      var x1 = dataView.readTwipsAndConvert();
+      var y1 = dataView.readTwipsAndConvert();
+
+      var wordContainer = new PIXI.DisplayObjectContainer();
+      wordContainer.x = x;
+      wordContainer.y = y;
+      wordContainer.rotation = theta;
+//      wordContainer.pivot = new PIXI.Point(x1 - x, y1 - y);
+      x = 0;
+      y = 0;
+      textContainer.addChild(wordContainer);
+      textContainer = wordContainer;
     }
 
     var n = dataView.readUnsighedVarInt();
@@ -178,6 +189,38 @@ module VectorReader {
     }
   }
 
+  function drawPolyline(dataView, g):void {
+    var moveToCount = dataView.readUnsighedVarInt();
+    if (moveToCount < 1) {
+      throw new Error("polyline segment count must be greater than 0");
+    }
+
+    var prevX = 0;
+    var prevY = 0;
+    do {
+      var x = dataView.readTwipsAndConvert() + prevX;
+      var y = dataView.readTwipsAndConvert() + prevY;
+      g.moveTo(x, y);
+      prevX = x;
+      prevY = y;
+
+      var n = dataView.readUnsighedVarInt();
+      if (n <= 0) {
+        throw new Error("polyline segment count must be greater than 0");
+      }
+
+      do {
+        var x = dataView.readTwipsAndConvert() + prevX;
+        var y = dataView.readTwipsAndConvert() + prevY;
+        g.lineTo(x, y);
+        prevX = x;
+        prevY = y;
+      }
+      while (--n > 0);
+    }
+    while (--moveToCount > 0);
+  }
+
   export function draw(tileData:ArrayBuffer, g:PIXI.Graphics, textContainer:DiplayObjectContainer, zoomLevel:number) {
     var dataView = new MyDataView(new DataView(tileData));
     var data = PIXI.BitmapText.fonts["Avenir Next"];
@@ -215,23 +258,7 @@ module VectorReader {
           break;
 
         case PixiCommand.POLYLINE2:
-          var prevX = dataView.readTwipsAndConvert();
-          var prevY = dataView.readTwipsAndConvert();
-          g.moveTo(prevX, prevY);
-
-          var n = dataView.readUnsighedVarInt();
-          if (n <= 0) {
-            throw new Error("polyline segement count must be greater than 0");
-          }
-
-          do {
-            var x = dataView.readTwipsAndConvert() + prevX;
-            var y = dataView.readTwipsAndConvert() + prevY;
-            g.lineTo(x, y);
-            prevX = x;
-            prevY = y;
-          }
-          while (--n > 0);
+          drawPolyline(dataView, g);
           break;
 
         case PixiCommand.LINE_STYLE_RGB:

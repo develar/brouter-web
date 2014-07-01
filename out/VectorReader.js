@@ -102,8 +102,19 @@ var VectorReader;
         var x = dataView.readTwipsAndConvert();
         var y = dataView.readTwipsAndConvert();
         if (rotated) {
-            dataView.readTwipsAndConvert();
-            dataView.readTwipsAndConvert();
+            var theta = dataView.readTwipsAndConvert();
+            var x1 = dataView.readTwipsAndConvert();
+            var y1 = dataView.readTwipsAndConvert();
+
+            var wordContainer = new PIXI.DisplayObjectContainer();
+            wordContainer.x = x;
+            wordContainer.y = y;
+            wordContainer.rotation = theta;
+
+            x = 0;
+            y = 0;
+            textContainer.addChild(wordContainer);
+            textContainer = wordContainer;
         }
 
         var n = dataView.readUnsighedVarInt();
@@ -179,6 +190,36 @@ var VectorReader;
         }
     }
 
+    function drawPolyline(dataView, g) {
+        var moveToCount = dataView.readUnsighedVarInt();
+        if (moveToCount < 1) {
+            throw new Error("polyline segment count must be greater than 0");
+        }
+
+        var prevX = 0;
+        var prevY = 0;
+        do {
+            var x = dataView.readTwipsAndConvert() + prevX;
+            var y = dataView.readTwipsAndConvert() + prevY;
+            g.moveTo(x, y);
+            prevX = x;
+            prevY = y;
+
+            var n = dataView.readUnsighedVarInt();
+            if (n <= 0) {
+                throw new Error("polyline segment count must be greater than 0");
+            }
+
+            do {
+                var x = dataView.readTwipsAndConvert() + prevX;
+                var y = dataView.readTwipsAndConvert() + prevY;
+                g.lineTo(x, y);
+                prevX = x;
+                prevY = y;
+            } while(--n > 0);
+        } while(--moveToCount > 0);
+    }
+
     function draw(tileData, g, textContainer, zoomLevel) {
         var dataView = new MyDataView(new DataView(tileData));
         var data = PIXI.BitmapText.fonts["Avenir Next"];
@@ -215,22 +256,7 @@ var VectorReader;
                     break;
 
                 case 3 /* POLYLINE2 */:
-                    var prevX = dataView.readTwipsAndConvert();
-                    var prevY = dataView.readTwipsAndConvert();
-                    g.moveTo(prevX, prevY);
-
-                    var n = dataView.readUnsighedVarInt();
-                    if (n <= 0) {
-                        throw new Error("polyline segement count must be greater than 0");
-                    }
-
-                    do {
-                        var x = dataView.readTwipsAndConvert() + prevX;
-                        var y = dataView.readTwipsAndConvert() + prevY;
-                        g.lineTo(x, y);
-                        prevX = x;
-                        prevY = y;
-                    } while(--n > 0);
+                    drawPolyline(dataView, g);
                     break;
 
                 case 4 /* LINE_STYLE_RGB */:
@@ -246,7 +272,7 @@ var VectorReader;
                     break;
 
                 case 10 /* DRAW_CIRCLE2 */:
-                    g.drawCircle(dataView.readTwipsAndConvert(), dataView.readSignedVarInt(), dataView.readSignedVarInt());
+                    g.drawCircle(dataView.readTwipsAndConvert(), dataView.readTwipsAndConvert(), dataView.readTwipsAndConvert());
                     break;
 
                 case 6 /* BEGIN_FILL_RGB */:
