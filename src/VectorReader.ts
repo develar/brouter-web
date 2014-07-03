@@ -34,16 +34,6 @@ module VectorReader {
       return this.dataView.getUint8(this.cursor++);
     }
 
-    getUnsignedByte(offset:number):number {
-      return this.dataView.getUint8(offset);
-    }
-
-    readShort():number {
-      var r = this.dataView.getInt16(this.cursor);
-      this.cursor += 2;
-      return r;
-    }
-
     // twips
     readTwipsAndConvert():number {
       return this.readSignedVarInt() / 20;
@@ -79,18 +69,6 @@ module VectorReader {
       return r;
     }
 
-    readUint():number {
-      var r = this.dataView.getUint32(this.cursor);
-      this.cursor += 4;
-      return r;
-    }
-
-    readFloat():number {
-      var r = this.dataView.getFloat32(this.cursor);
-      this.cursor += 4;
-      return r;
-    }
-
     readRgb():number {
       return (this.readUnsignedByte() << 16) + (this.readUnsignedByte() << 8) + (this.readUnsignedByte() << 0);
     }
@@ -100,17 +78,16 @@ module VectorReader {
     var x = dataView.readTwipsAndConvert();
     var y = dataView.readTwipsAndConvert();
     if (rotated) {
-      var theta = dataView.readTwipsAndConvert();
-      var x1 = dataView.readTwipsAndConvert();
-      var y1 = dataView.readTwipsAndConvert();
+      var rotation = dataView.readTwipsAndConvert();
+      var textWidth = dataView.readTwipsAndConvert();
+      var textHeight = dataView.readTwipsAndConvert();
 
       var wordContainer = new PIXI.DisplayObjectContainer();
-      wordContainer.x = x;
-      wordContainer.y = y;
-      wordContainer.rotation = theta;
-//      wordContainer.pivot = new PIXI.Point(x1 - x, y1 - y);
-      x = 0;
-      y = 0;
+      wordContainer.position.x = x;
+      wordContainer.position.y = y;
+      wordContainer.rotation = rotation;
+      x = -textWidth / 2;
+      y = -(textHeight - textHeight / 3);
       textContainer.addChild(wordContainer);
       textContainer = wordContainer;
     }
