@@ -88,18 +88,21 @@ declare module PIXI
 		load(): void;
 	}
 
-	export class BaseTexture extends EventTarget
-	{
-		height: number;
-		width: number;
-		source: string;
+  export class BaseTexture extends EventTarget {
+    height:number;
+    width:number;
+    source:string;
 
-		constructor(source: HTMLImageElement);
-		constructor(source: HTMLCanvasElement);
-		destroy():void;
+    hasLoaded:boolean;
 
-		static fromImage(imageUrl: string, crossorigin?:boolean ): BaseTexture;
-	}
+    constructor(source:HTMLImageElement);
+
+    constructor(source:HTMLCanvasElement);
+
+    destroy():void;
+
+    static fromImage(imageUrl:string, crossorigin?:boolean):BaseTexture;
+  }
 
 	export class BitmapFontLoader extends EventTarget
 	{
@@ -338,16 +341,18 @@ declare module PIXI
 		contains( x:number, y:number ):boolean;
 	}
 
-	export class Rectangle implements IHitArea
-	{
-		x: number;
-		y: number;
-		width: number;
-		height: number;
-		constructor(x: number, y: number, width: number, height: number);
-		clone(): Rectangle;
-		contains(x: number, y: number):boolean;
-	}
+  export class Rectangle implements IHitArea {
+    x:number;
+    y:number;
+    width:number;
+    height:number;
+
+    constructor(x:number, y:number, width:number, height:number);
+
+    clone():Rectangle;
+
+    contains(x:number, y:number):boolean;
+  }
 
 	export class RenderTexture extends Texture
 	{
@@ -403,22 +408,29 @@ declare module PIXI
 		setStyle(style: ITextStyle): void;
 	}
 
-	export class Texture extends EventTarget
-	{
-		baseTexture: BaseTexture;
-		frame: Rectangle;
-		trim:Point;
-		render( displayObject:DisplayObject, position:Point, clear:boolean ):void;
-		constructor(baseTexture: BaseTexture, frame?: Rectangle);
-		destroy(destroyBase:boolean):void;
-		setFrame(frame: Rectangle): void;
+  export class Texture extends EventTarget {
+    baseTexture:BaseTexture;
+    frame:Rectangle;
+    trim:Point;
 
-		static addTextureToCache(texture: Texture, id: string): void;
-		static fromCanvas(canvas: HTMLCanvasElement): Texture;
-		static fromFrame(frameId: string): Texture;
-		static fromImage(imageUrl: string, crossorigin?: boolean): Texture;
-		static removeTextureFromCache(id: any): Texture;
-	}
+    constructor(baseTexture:BaseTexture, frame?:Rectangle);
+
+    render(displayObject:DisplayObject, position:Point, clear:boolean):void;
+
+    destroy(destroyBase:boolean):void;
+
+    setFrame(frame:Rectangle):void;
+
+    static addTextureToCache(texture:Texture, id:string):void;
+
+    static fromCanvas(canvas:HTMLCanvasElement):Texture;
+
+    static fromFrame(frameId:string):Texture;
+
+    static fromImage(imageUrl:string, crossorigin?:boolean):Texture;
+
+    static removeTextureFromCache(id:any):Texture;
+  }
 
 	export class TilingSprite extends DisplayObjectContainer
 	{

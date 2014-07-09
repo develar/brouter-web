@@ -14,33 +14,41 @@
 </head>
 <body>
 <script>
+  var symbolServerUrl = "http://localhost:6090/";
+  var count = 2;
+  var textures;
+
   var bitmapFontLoader = new PIXI.BitmapFontLoader("10-bold.fnt");
-  bitmapFontLoader.addEventListener("loaded", function () {
-    drawTile();
+  var loadedListener = function () {
+    if (--count == 0) {
+      drawTile();
+    }
+  };
+  bitmapFontLoader.addEventListener("loaded", loadedListener);
+  VectorReader.loadTextureAtlas(symbolServerUrl + "Elevate", function (t) {
+    textures = t;
+    loadedListener();
   });
+
   bitmapFontLoader.load();
 
   function drawTile() {
-    var url = "http://localhost:6090/19/278927/182093.v";
-//    var url = "http://localhost:6090/18/139471/91081.v";
+    var url = symbolServerUrl + "19/278927/182093.v";
 
     var stage = new PIXI.Stage(0xF8F8F8);
 //  var renderer = PIXI.autoDetectRenderer(256, 256, null, false, true);
     var renderer = new PIXI.CanvasRenderer(256, 256);
+//    var renderer = new PIXI.CanvasRenderer(256 * 2, 256 * 3);
     document.body.appendChild(renderer.view);
-    var request = new XMLHttpRequest();
-    request.responseType = 'arraybuffer';
-    request.onload = function () {
+    VectorReader.loadData(url, function (result) {
       var graphics = new PIXI.Graphics();
       var textContainer = new PIXI.DisplayObjectContainer();
-      VectorReader.draw(request.response, graphics, textContainer, parseInt(url.substr("http://localhost:6090/".length, 2)));
       stage.addChild(graphics);
       stage.addChild(textContainer);
+      VectorReader.draw(result, graphics, textContainer, parseInt(url.substr("http://localhost:6090/".length, 2)), textures);
+
       renderer.render(stage);
-    };
-//  request.open("get", "http://localhost:6090/12/2185/1429.v?f=" + Math.random());
-    request.open("get", url);
-    request.send();
+    });
   }
 </script>
 

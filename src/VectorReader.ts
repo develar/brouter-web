@@ -5,18 +5,27 @@
 
 import DiplayObjectContainer = PIXI.DisplayObjectContainer;
 import Sprite = PIXI.Sprite;
+import Texture = PIXI.Texture;
 
 module VectorReader {
   enum PixiCommand {
-    MOVE_TO, LINE_TO, POLYLINE, POLYLINE2,
+    MOVE_TO,
+    LINE_TO,
+    POLYLINE,
+    POLYLINE2,
 
-    LINE_STYLE_RGB, LINE_STYLE_RGBA,
-    BEGIN_FILL_RGB, BEGIN_FILL_RGBA,
+    LINE_STYLE_RGB,
+    LINE_STYLE_RGBA,
+    BEGIN_FILL_RGB,
+    BEGIN_FILL_RGBA,
     END_FILL,
 
-    DRAW_CIRCLE, DRAW_CIRCLE2,
+    DRAW_CIRCLE,
+    DRAW_CIRCLE2,
     ROTATED_TEXT,
     TEXT,
+
+    SYMBOL,
   }
 
   var STROKE_MIN_ZOOM_LEVEL = 12;
@@ -74,6 +83,84 @@ module VectorReader {
     }
   }
 
+  export function loadData(url:string, loaded:(result:ArrayBuffer)=>void) {
+    var request = new XMLHttpRequest();
+    request.responseType = 'arraybuffer';
+    request.onload = function (event) {
+      loaded((<XMLHttpRequest>event.target).response);
+    };
+    request.open("get", url);
+    request.send();
+  }
+
+  export function loadTextureAtlas(name:string, loaded:(textures:Texture[])=>void):void {
+    var baseTexture = Texture.fromImage(name + ".png").baseTexture;
+    loadData(name + ".atl", function (result) {
+      var dataView = new MyDataView(new DataView(result));
+      var n = dataView.readUnsighedVarInt();
+      var textures = new Array(n);
+      for (var i = 0; i < n; i++) {
+        textures[i] = new Texture(baseTexture, new PIXI.Rectangle(dataView.readUnsighedVarInt(), dataView.readUnsighedVarInt(), dataView.readUnsighedVarInt(), dataView.readUnsighedVarInt()));
+      }
+
+      if (baseTexture.hasLoaded) {
+        loaded(textures);
+      }
+      else {
+        baseTexture.addEventListener('loaded', function () {
+          loaded(textures);
+        });
+      }
+    });
+  }
+
+  function readCharCode(dataView) {
+    var char1 = dataView.readUnsignedByte();
+    if (char1 <= 127) {
+      return char1;
+    }
+    else {
+      switch (char1 >> 4) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+          break;
+
+        case 12:
+        case 13:
+          if (dataView.cursor + 2 > dataView.length) {
+            throw new Error("malformed input: partial character at end");
+          }
+
+          var char2 = dataView.readUnsignedByte();
+          if ((char2 & 0xC0) != 0x80) {
+            throw new Error("malformed input around byte " + (dataView.cursor - 1));
+          }
+          return ((char1 & 0x1F) << 6) | (char2 & 0x3F);
+
+        case 14:
+          if (dataView.cursor + 3 > dataView.length) {
+            throw new Error("malformed input: partial character at end");
+          }
+
+          var char2 = dataView.readUnsignedByte();
+          var char3 = dataView.readUnsignedByte();
+          if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
+            throw new Error("malformed input around byte " + (dataView.cursor - 2));
+          }
+          return ((char1 & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0);
+
+        default:
+          throw new Error("malformed input around byte " + (dataView.cursor - 1));
+      }
+    }
+  }
+
   function drawText(dataView, rotated:boolean, charsInfo:Array<PIXI.CharInfo>, textContainer:DiplayObjectContainer):void {
     var x = dataView.readTwipsAndConvert();
     var y = dataView.readTwipsAndConvert();
@@ -94,58 +181,8 @@ module VectorReader {
 
     var n = dataView.readUnsighedVarInt();
     var prevCharCode = -1;
-    var count = 0;
-    while (count < n) {
-      var charCode = dataView.readUnsignedByte();
-      if (charCode <= 127) {
-        count++;
-      }
-      else {
-        switch (charCode >> 4) {
-          case 0:
-          case 1:
-          case 2:
-          case 3:
-          case 4:
-          case 5:
-          case 6:
-          case 7:
-            count++;
-            break;
-
-          case 12:
-          case 13:
-            count += 2;
-            if (count > n) {
-              throw new Error("malformed input: partial character at end");
-            }
-
-            var char2 = dataView.readUnsignedByte();
-            if ((char2 & 0xC0) != 0x80) {
-                throw new Error("malformed input around byte " + count);
-            }
-            charCode = ((charCode & 0x1F) << 6) | (char2 & 0x3F);
-            break;
-
-          case 14:
-            count += 3;
-            if (count > n) {
-              throw new Error("malformed input: partial character at end");
-            }
-
-            var char2 = dataView.readUnsignedByte();
-            var char3 = dataView.readUnsignedByte();
-            if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
-              throw new Error("malformed input around byte " + (count - 1));
-            }
-            charCode = ((charCode & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0);
-            break;
-
-          default:
-            throw new Error("malformed input around byte " + count);
-        }
-      }
-
+    do {
+      var charCode = readCharCode(dataView);
       var charData = charsInfo[charCode];
       if (charData == null) {
         console.warn("missed char: " + charCode);
@@ -164,6 +201,7 @@ module VectorReader {
       x += charData.xAdvance;
       prevCharCode = charCode;
     }
+    while (--n > 0);
   }
 
   function drawPolyline(dataView, g):void {
@@ -198,7 +236,7 @@ module VectorReader {
     while (--moveToCount > 0);
   }
 
-  export function draw(tileData:ArrayBuffer, g:PIXI.Graphics, textContainer:DiplayObjectContainer, zoomLevel:number) {
+  export function draw(tileData:ArrayBuffer, g:PIXI.Graphics, textContainer:DiplayObjectContainer, zoomLevel:number, textures:Texture[]) {
     var dataView = new MyDataView(new DataView(tileData));
     var data = PIXI.BitmapText.fonts["Avenir Next"];
     var charsInfo = data.chars;
@@ -274,6 +312,20 @@ module VectorReader {
 
         case PixiCommand.TEXT:
           drawText(dataView, false, charsInfo, textContainer);
+          break;
+
+        case PixiCommand.SYMBOL:
+          var textureId = dataView.readUnsighedVarInt();
+          var x = dataView.readTwipsAndConvert();
+          var y = dataView.readTwipsAndConvert();
+          var rotation = dataView.readTwipsAndConvert();
+
+          var symbol = new Sprite(textures[textureId]);
+//          console.log(symbol, x, y, rotation);
+          symbol.x = x;
+          symbol.y = y;
+
+          textContainer.addChild(symbol);
           break;
 
         default:
