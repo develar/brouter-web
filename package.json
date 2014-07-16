@@ -4,8 +4,8 @@
   "devDependencies": {
     "gulp": "^3.8.1",
     "gulp-bower": "0.0.6",
+    "gulp-changed": "^0.4.0",
     "gulp-filter": "^0.4.1",
-    "gulp-newer": "^0.3.0",
     "gulp-type": "^0.2.0"
   },
   "repository": {

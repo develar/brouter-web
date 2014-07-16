@@ -1,6 +1,6 @@
 var gulp = require('gulp');
 var bower = require('gulp-bower');
-var newer = require('gulp-newer');
+var changed = require('gulp-changed');
 var gulpFilter = require('gulp-filter');
 
 var ts = require('gulp-type');
@@ -8,10 +8,12 @@ var ts = require('gulp-type');
 var tsProject = ts.createProject({removeComments: true});
 
 gulp.task('compile', function () {
+  var outDir = 'out';
   var tsResult = gulp.src('src/*.ts')
+    .pipe(changed(outDir, {extension: '.js'}))
     .pipe(ts(tsProject));
 
-  return tsResult.js.pipe(gulp.dest('out'));
+  return tsResult.js.pipe(gulp.dest(outDir));
 });
 
 gulp.task('default', ['compile']);
