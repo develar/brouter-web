@@ -183,22 +183,22 @@ module VectorReader {
     var prevCharCode = -1;
     do {
       var charCode = readCharCode(dataView);
-      var charData = charsInfo[charCode];
-      if (charData == null) {
+      var charInfo = charsInfo[charCode];
+      if (charInfo == null) {
         console.warn("missed char: " + charCode);
         continue;
       }
 
-      if (prevCharCode !== -1 && charData[prevCharCode] != null) {
-        x += charData.kerning[prevCharCode];
+      if (prevCharCode !== -1) {
+        x += charInfo.kerning[prevCharCode];
       }
 
-      var charSprite = new Sprite(charData.texture);
-      charSprite.position.x = x + charData.xOffset;
-      charSprite.position.y = y + charData.yOffset;
+      var charSprite = new Sprite(charInfo.texture);
+      charSprite.position.x = x + charInfo.xOffset;
+      charSprite.position.y = y + charInfo.yOffset;
       textContainer.addChild(charSprite);
 
-      x += charData.xAdvance;
+      x += charInfo.xAdvance;
       prevCharCode = charCode;
     }
     while (--n > 0);
