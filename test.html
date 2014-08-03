@@ -9,13 +9,14 @@
       background-color: #000000;
     }
   </style>
-  <script src="lib/pixi.dev.js"></script>
+  <script src="lib/pixi.dev.js" charset="utf-8"></script>
   <script src="out/io.js"></script>
   <script src="out/bitmapFont.js"></script>
   <script src="out/VectorReader.js"></script>
 </head>
 <body>
 <script>
+  PIXI.dontSayHello = true
   var symbolServerUrl = "http://localhost:6090/"
   var count = 2
   var resourceTextures
@@ -38,7 +39,8 @@
   });
 
   function drawTile() {
-    var url = symbolServerUrl + "19/278927/182093.v"
+    //var url = symbolServerUrl + "19/278927/182093.v"
+    var url = symbolServerUrl + "12/2185/1429.v"
 
     var stage = new PIXI.Stage(0xF8F8F8)
     //var renderer = PIXI.autoDetectRenderer(256, 256, null, false, true);
