@@ -10,44 +10,49 @@
     }
   </style>
   <script src="lib/pixi.dev.js"></script>
+  <script src="out/io.js"></script>
+  <script src="out/bitmapFont.js"></script>
   <script src="out/VectorReader.js"></script>
 </head>
 <body>
 <script>
-  var symbolServerUrl = "http://localhost:6090/";
-  var count = 2;
-  var textures;
+  var symbolServerUrl = "http://localhost:6090/"
+  var count = 2
+  var resourceTextures
+  var fontToChars
 
-  var bitmapFontLoader = new PIXI.BitmapFontLoader(symbolServerUrl + "fonts/10-b.fnt");
   var loadedListener = function () {
     if (--count == 0) {
-      drawTile();
+      drawTile()
     }
   };
-  bitmapFontLoader.addEventListener("loaded", loadedListener);
-  VectorReader.loadTextureAtlas(symbolServerUrl + "Elevate", function (t) {
-    textures = t;
-    loadedListener();
+
+  bitmapFont.loadFonts(symbolServerUrl + "fonts", function (c) {
+    fontToChars = c
+    loadedListener()
+  })
+
+  io.loadTextureAtlas(symbolServerUrl + "Elevate", function (t) {
+    resourceTextures = t
+    loadedListener()
   });
 
-  bitmapFontLoader.load();
-
   function drawTile() {
-    var url = symbolServerUrl + "19/278927/182093.v";
+    var url = symbolServerUrl + "19/278927/182093.v"
 
-    var stage = new PIXI.Stage(0xF8F8F8);
-//  var renderer = PIXI.autoDetectRenderer(256, 256, null, false, true);
-    var renderer = new PIXI.CanvasRenderer(256, 256);
-//    var renderer = new PIXI.CanvasRenderer(256 * 2, 256 * 3);
-    document.body.appendChild(renderer.view);
-    VectorReader.loadData(url, function (result) {
-      var graphics = new PIXI.Graphics();
-      var textContainer = new PIXI.DisplayObjectContainer();
-      stage.addChild(graphics);
-      stage.addChild(textContainer);
-      VectorReader.draw(result, graphics, textContainer, parseInt(url.substr("http://localhost:6090/".length, 2)), textures);
+    var stage = new PIXI.Stage(0xF8F8F8)
+    //var renderer = PIXI.autoDetectRenderer(256, 256, null, false, true);
+    var renderer = new PIXI.CanvasRenderer(256, 256)
+    //var renderer = new PIXI.CanvasRenderer(256 * 2, 256 * 3);
+    document.body.appendChild(renderer.view)
+    io.loadData(url, function (result) {
+      var graphics = new PIXI.Graphics()
+      var textContainer = new PIXI.DisplayObjectContainer()
+      stage.addChild(graphics)
+      stage.addChild(textContainer)
+      VectorReader.draw(result, graphics, textContainer, parseInt(url.substr("http://localhost:6090/".length, 2)), resourceTextures, fontToChars)
 
-      renderer.render(stage);
+      renderer.render(stage)
     });
   }
 </script>
