@@ -1,3 +1,5 @@
+/// <reference path="../typings/pixi/pixi.d.ts" />
+
 "use strict";
 
 module io {
@@ -88,7 +90,7 @@ module io {
   }
 
   export function loadTextureAtlas(name:string, loaded:(textures:Texture[])=>void):void {
-    var baseTexture = Texture.fromImage(name + ".png").baseTexture;
+    var baseTexture = Texture.fromImage(name).baseTexture;
     loadData(name + ".atl", function (result) {
       var dataView = new InputStream(new DataView(result));
       var n = dataView.readUnsignedVarInt();

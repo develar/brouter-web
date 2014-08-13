@@ -17,8 +17,8 @@ module bitmapFont {
   }
 
   export function loadFonts(name:string, loaded:(chars:CharInfo[][])=>void):void {
-    var baseTexture = Texture.fromImage(name + ".png").baseTexture
-    io.loadData(name, function (result) {
+    var baseTexture = Texture.fromImage(name).baseTexture
+    io.loadData(name + ".info", function (result) {
       var dataView = new InputStream(new DataView(result))
       var n = dataView.readUnsignedVarInt()
       var fonts = new Array(n)

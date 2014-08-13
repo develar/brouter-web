@@ -87,7 +87,7 @@ var io;
     io.callOrWaitTexture = callOrWaitTexture;
 
     function loadTextureAtlas(name, loaded) {
-        var baseTexture = Texture.fromImage(name + ".png").baseTexture;
+        var baseTexture = Texture.fromImage(name).baseTexture;
         loadData(name + ".atl", function (result) {
             var dataView = new InputStream(new DataView(result));
             var n = dataView.readUnsignedVarInt();
